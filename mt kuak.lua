@@ -1,266 +1,209 @@
 --[[
-    Script: Kuak Hub v2.0 (Stable & Complete)
+    Script: Kuak Hub v1.0
     Author: kuak saudi
-    Game: Blox Fruits
+    Game: Arsenal
+    Description: Aimbot + ESP script with Chroma Key UI.
 ]]
 
-print("Kuak Hub v2.0: Loading...")
-
--- =================================================================
---                        Rayfield GUI Library
--- =================================================================
--- Using a trusted, stable library to ensure the GUI works 100%
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield.lua' ))()
-print("Kuak Hub: GUI Library loaded.")
-
--- =================================================================
---                        Main Window
--- =================================================================
-local Window = Rayfield:CreateWindow({
-    Name = "Kuak Hub v2.0",
-    LoadingTitle = "Kuak Hub - Loading...",
-    LoadingSubtitle = "by kuak saudi",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "KuakHub",
-        FileName = "BloxFruits"
-    },
-    Discord = {
-        Enabled = true,
-        Invite = "YprBskZdc9",
-        RememberJoins = true
-    }
-})
+print("Kuak Hub (Arsenal) v1.0: Loading...")
 
 -- =================================================================
 --                        Services & Variables
 -- =================================================================
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
 
-local AutoFarmConfig = {
-    Enabled = false,
-    Method = "Melee",
-    BringMobs = true
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local AimbotConfig = {
+    Enabled = true,
+    TargetPart = "Head",
+    FOV = 150,
+    Aiming = false
 }
 
 local ESPConfig = {
-    Players = false,
-    Fruits = false,
-    Chests = false
+    Enabled = true,
+    Boxes = true,
+    Names = true,
+    Tracers = false
 }
 
-print("Kuak Hub: Services and variables initialized.")
-
 -- =================================================================
---                        Farming Tab
+--                        Chroma Key GUI
 -- =================================================================
-local FarmingTab = Window:CreateTab("Main", 4483362458)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KuakHubArsenalGui"
+screenGui.Parent = CoreGui
+screenGui.ResetOnSpawn = false
 
-FarmingTab:CreateToggle({
-    Name = "Enable Auto Farm",
-    CurrentValue = false,
-    Flag = "AutoFarmToggle",
-    Callback = function(Value)
-        AutoFarmConfig.Enabled = Value
-        print("Auto Farm set to: " .. tostring(Value))
-    end,
-})
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Chroma Green
+mainFrame.BorderColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.BorderSizePixel = 2
+mainFrame.Position = UDim2.new(0.01, 0, 0.5, -100)
+mainFrame.Size = UDim2.new(0, 200, 0, 150)
+mainFrame.Draggable = true
 
-FarmingTab:CreateToggle({
-    Name = "Bring Mobs",
-    CurrentValue = true,
-    Flag = "BringMobsToggle",
-    Callback = function(Value)
-        AutoFarmConfig.BringMobs = Value
-    end,
-})
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = mainFrame
+titleLabel.Size = UDim2.new(1, 0, 0, 25)
+titleLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Text = "Kuak Hub - Arsenal"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
 
-FarmingTab:CreateDropdown({
-    Name = "Select Farm Method",
-    Options = {"Melee", "Sword", "Fruit"},
-    CurrentValue = "Melee",
-    Flag = "FarmMethodDropdown",
-    Callback = function(Value)
-        AutoFarmConfig.Method = Value
-        print("Farm method set to: " .. Value)
-    end,
-})
-
-FarmingTab:CreateButton({
-    Name = "Auto-assign Stats (Melee, Defense, Sword)",
-    Callback = function()
-        local stats = {"Melee", "Defense", "Sword"}
-        for _, stat in ipairs(stats) do
-            for i = 1, 100 do -- Assign up to 100 points per click
-                game:GetService("ReplicatedStorage").Remotes.Stat:InvokeServer(stat)
-            end
-        end
-        Rayfield:Notify({
-            Title = "Stats Assigned",
-            Content = "Points have been assigned to Melee, Defense, and Sword.",
-            Duration = 5
-        })
-    end,
-})
-
--- =================================================================
---                        ESP Tab
--- =================================================================
-local ESPTab = Window:CreateTab("ESP", 4483362458)
-
-ESPTab:CreateToggle({
-    Name = "ESP Players",
-    CurrentValue = false,
-    Flag = "ESPPlayersToggle",
-    Callback = function(Value)
-        ESPConfig.Players = Value
-    end,
-})
-
-ESPTab:CreateToggle({
-    Name = "ESP Fruits",
-    CurrentValue = false,
-    Flag = "ESPFruitsToggle",
-    Callback = function(Value)
-        ESPConfig.Fruits = Value
-    end,
-})
-
-ESPTab:CreateToggle({
-    Name = "ESP Chests",
-    CurrentValue = false,
-    Flag = "ESPChestsToggle",
-    Callback = function(Value)
-        ESPConfig.Chests = Value
-    end,
-})
-
--- =================================================================
---                        Player Tab
--- =================================================================
-local PlayerTab = Window:CreateTab("Player", 4483362458)
-
-PlayerTab:CreateSlider({
-    Name = "WalkSpeed",
-    Range = {16, 200},
-    Increment = 1,
-    Suffix = "speed",
-    CurrentValue = 16,
-    Flag = "WalkSpeedSlider",
-    Callback = function(Value)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = Value
-        end
-    end,
-})
-
-PlayerTab:CreateSlider({
-    Name = "JumpPower",
-    Range = {50, 200},
-    Increment = 1,
-    Suffix = "power",
-    CurrentValue = 50,
-    Flag = "JumpPowerSlider",
-    Callback = function(Value)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.JumpPower = Value
-        end
-    end,
-})
-
--- =================================================================
---                        Core Logic (Auto Farm & ESP)
--- =================================================================
-
--- Auto Farm Loop
-RunService.Heartbeat:Connect(function()
-    if not AutoFarmConfig.Enabled or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
-
-    local currentQuest = Player.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
-    if currentQuest == "No Quest" then
-        -- This part needs to be improved later to find the correct quest giver
-        return
-    end
-
-    local questProgress = Player.PlayerGui.Main.Quest.Container.QuestTitle.Progress.Text
-    local needed = tonumber(questProgress:match("/(%d+)"))
-    local current = tonumber(questProgress:match("(%d+)/"))
-
-    if current and needed and current >= needed then return end -- Quest complete
-
-    local mobName = currentQuest:match("Defeat %d+ (.+)")
-    if not mobName then return end
-
-    local targetMob = nil
-    local minDist = math.huge
-    for _, v in pairs(Workspace.Enemies:GetChildren()) do
-        if v.Name == mobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-            local dist = (LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
-            if dist < minDist then
-                minDist = dist
-                targetMob = v
-            end
-        end
-    end
-
-    if targetMob then
-        if AutoFarmConfig.BringMobs then
-            targetMob.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -10)
-        end
-        -- This is a simplified attack logic, can be expanded
-        game.Players.LocalPlayer.Character.Humanoid:ChangeState(11)
-        game.Players.LocalPlayer.Character.Humanoid:ChangeState(11)
-    end
-end)
-
--- ESP Loop
-local function CreateESP(target, color, name)
-    local esp = Instance.new("BillboardGui", target)
-    esp.Name = "KuakESP"
-    esp.AlwaysOnTop = true
-    esp.Size = UDim2.new(0, 100, 0, 50)
+-- Simple function to create a toggle button
+local function createToggle(parent, text, flag, yPos)
+    local button = Instance.new("TextButton")
+    button.Parent = parent
+    button.Position = UDim2.new(0.05, 0, 0, yPos)
+    button.Size = UDim2.new(0.9, 0, 0, 20)
+    button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    button.Font = Enum.Font.SourceSans
+    button.Text = text .. ": ON"
+    button.TextColor3 = Color3.fromRGB(0, 255, 0)
+    button.TextSize = 14
     
-    local text = Instance.new("TextLabel", esp)
-    text.Size = UDim2.new(1, 0, 1, 0)
-    text.BackgroundColor3 = color
-    text.TextColor3 = Color3.new(1, 1, 1)
-    text.Text = name
-    text.Font = Enum.Font.SourceSans
-    return esp
+    button.MouseButton1Click:Connect(function()
+        flag.Value = not flag.Value
+        button.Text = text .. ": " .. (flag.Value and "ON" or "OFF")
+        button.TextColor3 = flag.Value and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    end)
 end
 
+-- Create flags and buttons
+local aimbotFlag = {Value = true}
+local espFlag = {Value = true}
+local boxesFlag = {Value = true}
+
+createToggle(mainFrame, "Aimbot", aimbotFlag, 30)
+createToggle(mainFrame, "ESP", espFlag, 60)
+createToggle(mainFrame, "Boxes", boxesFlag, 90)
+
+AimbotConfig.Enabled = aimbotFlag
+ESPConfig.Enabled = espFlag
+ESPConfig.Boxes = boxesFlag
+
+-- FOV Circle
+local fovCircle = Drawing.new("Circle")
+fovCircle.Visible = true
+fovCircle.Radius = AimbotConfig.FOV
+fovCircle.Color = Color3.fromRGB(255, 255, 255)
+fovCircle.Thickness = 1
+fovCircle.Filled = false
+fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+RunService:BindToRenderStep("FOV_Update", Enum.RenderPriority.Input.Value, function()
+    fovCircle.Radius = AimbotConfig.FOV
+    fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+end)
+
+print("Kuak Hub: GUI Loaded.")
+
+-- =================================================================
+--                        Core Logic
+-- =================================================================
+
+-- Aimbot
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        AimbotConfig.Aiming = true
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        AimbotConfig.Aiming = false
+    end
+end)
+
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local closestDistance = AimbotConfig.FOV + 1
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 and LocalPlayer.Team ~= player.Team then
+            local head = player.Character:FindFirstChild(AimbotConfig.TargetPart)
+            if head then
+                local screenPos, onScreen = Camera:WorldToScreenPoint(head.Position)
+                if onScreen then
+                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = player
+                    end
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+-- ESP
+local function createESPDrawings(player)
+    local drawings = {}
+    local head = player.Character:FindFirstChild("Head")
+    if not head then return end
+
+    -- Box
+    if ESPConfig.Boxes.Value then
+        local box = Drawing.new("Quad")
+        box.Visible = false
+        table.insert(drawings, box)
+        
+        RunService.RenderStepped:Connect(function()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local rootPos = player.Character.HumanoidRootPart.Position
+                local headPos = rootPos + Vector3.new(0, 2, 0)
+                local footPos = rootPos - Vector3.new(0, 3, 0)
+                
+                local headScreen, onScreen1 = Camera:WorldToScreenPoint(headPos)
+                local footScreen, onScreen2 = Camera:WorldToScreenPoint(footPos)
+
+                if onScreen1 and onScreen2 then
+                    local height = math.abs(headScreen.Y - footScreen.Y)
+                    local width = height / 2
+                    box.PointA = Vector2.new(headScreen.X - width / 2, headScreen.Y)
+                    box.PointB = Vector2.new(headScreen.X + width / 2, headScreen.Y)
+                    box.PointC = Vector2.new(headScreen.X + width / 2, footScreen.Y)
+                    box.PointD = Vector2.new(headScreen.X - width / 2, footScreen.Y)
+                    box.Color = LocalPlayer.TeamColor == player.TeamColor and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                    box.Thickness = 1
+                    box.Visible = true
+                else
+                    box.Visible = false
+                end
+            else
+                box.Visible = false
+            end
+        end)
+    end
+    return drawings
+end
+
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        createESPDrawings(player)
+    end
+end
+Players.PlayerAdded:Connect(createESPDrawings)
+
+-- Main Loop
 RunService.RenderStepped:Connect(function()
-    -- Clear old ESP
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v.Name == "KuakESP" then v:Destroy() end
-    end
-
-    if ESPConfig.Players then
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                CreateESP(player.Character.Head, Color3.fromRGB(255, 0, 0), player.Name)
-            end
-        end
-    end
-
-    if ESPConfig.Fruits then
-        for _, v in pairs(Workspace:GetChildren()) do
-            if v.Name:find("Fruit") and v:IsA("Model") and v:FindFirstChild("Handle") then
-                CreateESP(v.Handle, Color3.fromRGB(255, 0, 255), v.Name)
-            end
-        end
-    end
-
-    if ESPConfig.Chests then
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v.Name == "Chest" and v:IsA("MeshPart") then
-                CreateESP(v, Color3.fromRGB(255, 255, 0), "Chest")
-            end
+    if AimbotConfig.Enabled.Value and AimbotConfig.Aiming then
+        local target = getClosestPlayer()
+        if target then
+            local targetPos = target.Character[AimbotConfig.TargetPart].Position
+            local newCFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+            Camera.CFrame = Camera.CFrame:Lerp(newCFrame, 0.2) -- Lerp for smoothness
         end
     end
 end)
 
-print("Kuak Hub v2.0: Fully loaded and operational.")
+print("Kuak Hub (Arsenal) v1.0: Fully loaded and operational.")
